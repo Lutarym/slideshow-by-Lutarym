@@ -1,0 +1,12 @@
+{
+  "domain": "lutarym_slideshow",
+  "name": "Lutarym Slideshow",
+  "codeowners": ["@lutarym"],
+  "config_flow": false,
+  "documentation": "https://github.com/lutarym/lutarym_slideshow",
+  "requirements": ["smbclient>=1.4.0"],
+  "version": "1.0.0",
+  "homeassistant": {
+    "min_version": "2024.1.0"
+  }
+}

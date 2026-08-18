@@ -1,0 +1,9 @@
+{
+  "name": "Lutarym Slideshow",
+  "homeassistant": "2024.1.0",
+  "render_readme": true,
+  "filename": "lutarym-slideshow.zip",
+  "documentation": "https://github.com/lutarym/lutarym_slideshow",
+  "issues": "https://github.com/lutarym/lutarym_slideshow/issues",
+  "repository": "https://github.com/lutarym/lutarym_slideshow"
+}
