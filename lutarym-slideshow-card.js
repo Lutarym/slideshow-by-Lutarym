@@ -1,7 +1,7 @@
 class LutarymSlideshowCard extends HTMLElement {
   setConfig(config) {
     this.config = config;
-    this.intervalMinutes = config.interval_minutes || 5;
+    this.intervalSeconds = config.interval_seconds || 30;
     this.archiveMode = config.action !== "delete";
     this.mediaPath = config.media_path || "";
     this.archivePath = config.archive_path || "";
@@ -31,7 +31,7 @@ class LutarymSlideshowCard extends HTMLElement {
     return {
       media_path: "",
       archive_path: "",
-      interval_minutes: 5,
+      interval_seconds: 30,
       action: "archive",
       image_height: 300,
       image_fit: "contain"
@@ -172,7 +172,7 @@ class LutarymSlideshowCard extends HTMLElement {
     this._timer = setInterval(() => {
       this.currentIndex = (this.currentIndex + 1) % this.images.length;
       this._showImage();
-    }, this.intervalMinutes * 60 * 1000);
+    }, this.intervalSeconds * 1000);
   }
 
   disconnectedCallback() {
@@ -263,8 +263,8 @@ class LutarymSlideshowEditor extends HTMLElement {
           <div class="hint">z.B. Synology/slideshow/archiv</div>
         </div>
         <div class="field">
-          <label>Bildwechsel (Minuten)</label>
-          <input type="number" id="interval_minutes" min="1" max="120" value="${this._config.interval_minutes || ""}">
+          <label>Bildwechsel (Sekunden)</label>
+          <input type="number" id="interval_seconds" min="1" max="3600" value="${this._config.interval_seconds || 30}">
         </div>
         <div class="field">
           <label>Bildhöhe (Pixel)</label>
@@ -304,8 +304,8 @@ class LutarymSlideshowEditor extends HTMLElement {
       this._fireChanged();
     });
 
-    this.querySelector("#interval_minutes").addEventListener("change", (e) => {
-      this._config.interval_minutes = parseInt(e.target.value) || 5;
+    this.querySelector("#interval_seconds").addEventListener("change", (e) => {
+      this._config.interval_seconds = parseInt(e.target.value) || 30;
       this._fireChanged();
     });
 
