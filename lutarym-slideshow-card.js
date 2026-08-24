@@ -23,6 +23,12 @@ class LutarymSlideshowCard extends HTMLElement {
     }
   }
 
+  connectedCallback() {
+    if (this.images && this.images.length > 1 && !this._timer) {
+      this._startSlideshow();
+    }
+  }
+
   static getConfigElement() {
     return document.createElement("lutarym-slideshow-editor");
   }
