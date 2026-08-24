@@ -1,61 +1,78 @@
-# Lutarym Slideshow
+# Lutarym Slideshow Card
 
-Lovelace Card für Slideshows mit Bildwechsel-Intervall.
+Lovelace Card für Bilderslideshows mit automatischem Verfallsdatum.
+
+Bilder werden anhand des Dateinamens (DD.MM.YYYY.jpg) automatisch ausgeblendet und bei Bereinigung archiviert oder gelöscht.
+
+## Voraussetzung
+
+Die NAS-Freigabe muss in Home Assistant als Netzwerkspeicher (Media) eingebunden sein:
+
+**Einstellungen → System → Speicher → Netzwerkspeicher hinzufügen**
 
 ## Installation
 
 ### HACS
 
-1. HACS öffnen → Frontend
-2. Custom Repositories
-3. URL: `https://github.com/lutarym/lutarym-slideshow`
-4. Kategorie: `Lovelace`
-5. Installieren
+1. HACS → Frontend → Custom Repositories
+2. URL: `https://github.com/Lutarym/slideshow-by-Lutarym`
+3. Kategorie: Lovelace
+4. Installieren und HA neu starten
 
 ### Manuell
 
-```bash
-mkdir -p /root/config/www/lutarym-slideshow
-wget https://raw.githubusercontent.com/lutarym/lutarym-slideshow/main/lutarym-slideshow-card.js -O /root/config/www/lutarym-slideshow/lutarym-slideshow-card.js
-```
+`lutarym-slideshow-card.js` nach `/config/www/` kopieren.
 
-## Konfiguration
-
-### configuration.yaml
-
+In `configuration.yaml`:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/lutarym-slideshow/lutarym-slideshow-card.js
+    - /local/lutarym-slideshow-card.js
 ```
 
-### Dashboard
+## Cleanup einrichten
+
+### 1. Script kopieren
+
+`slideshow_cleanup.sh` nach `/config/scripts/` kopieren.
+
+Pfade im Script anpassen (BILDER_DIR und ARCHIV_DIR).
+
+### 2. Shell Command in configuration.yaml
 
 ```yaml
-type: custom:lutarym-slideshow-card
-smb_path: \\192.168.10.10\ordner
-image_path: bilder
-archive_path: archiv
-interval_minutes: 5
-action: archive
+shell_command:
+  slideshow_cleanup_archive: "bash /config/scripts/slideshow_cleanup.sh archive"
+  slideshow_cleanup_delete: "bash /config/scripts/slideshow_cleanup.sh delete"
 ```
 
-## Optionen
+### 3. Automation in configuration.yaml
 
-| Option | Typ | Standard | Beschreibung |
-|--------|-----|----------|-------------|
-| `smb_path` | string | - | SMB-Pfad (z.B. `\\192.168.10.10\ordner`) |
-| `image_path` | string | - | Bildverzeichnis |
-| `archive_path` | string | - | Archivverzeichnis |
-| `interval_minutes` | number | 5 | Bildwechsel in Minuten |
-| `action` | string | archive | `archive` oder `delete` |
+```yaml
+automation:
+  - alias: "Slideshow Cleanup"
+    id: slideshow_cleanup
+    trigger:
+      - platform: time
+        at: "00:00:00"
+    action:
+      - service: shell_command.slideshow_cleanup_archive
+```
+
+HA neu starten.
+
+## Card im Dashboard
+
+Im Dashboard-Editor "Card hinzufügen" → Lutarym Slideshow.
+
+Alle Einstellungen werden über die UI konfiguriert.
 
 ## Datumsformat
 
-`DD.MM.YYYY.jpg`
+Dateinamen: `DD.MM.YYYY.jpg`
 
-Beispiele:
-- `26.08.2026.jpg`
-- `31.12.2025.jpg`
+Beispiele: `26.08.2026.jpg`, `31.12.2025.jpg`
 
-Lizenz: MIT
+## Lizenz
+
+MIT

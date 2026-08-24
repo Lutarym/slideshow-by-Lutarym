@@ -1,25 +1,20 @@
 class LutarymSlideshowCard extends HTMLElement {
   setConfig(config) {
-    if (!config.smb_path) {
-      throw new Error("SMB-Pfad erforderlich");
-    }
     this.config = config;
     this.images = [];
     this.currentIndex = 0;
     this.intervalMinutes = config.interval_minutes || 5;
     this.archiveMode = config.action !== "delete";
-    this.smbPath = config.smb_path;
-    this.imagePath = config.image_path || "bilder";
-    this.archivePath = config.archive_path || "archiv";
+    this.mediaPath = config.media_path || "";
+    this.archivePath = config.archive_path || "";
   }
 
-  setHass(hass) {
-    this.hass = hass;
-    if (!this.rendered) {
-      this.render();
-      this.rendered = true;
-      this.loadImages();
-      this.startSlideshow();
+  set hass(hass) {
+    this._hass = hass;
+    if (!this._rendered) {
+      this._rendered = true;
+      this._render();
+      this._loadImages();
     }
   }
 
@@ -29,47 +24,38 @@ class LutarymSlideshowCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      smb_path: "\\192.168.10.10\ordner",
-      image_path: "bilder",
-      archive_path: "archiv",
+      media_path: "",
+      archive_path: "",
       interval_minutes: 5,
       action: "archive"
     };
   }
 
-  render() {
-    const root = this.attachShadow({ mode: "open" });
-    root.innerHTML = `
+  _render() {
+    if (this.shadowRoot) {
+      this.shadowRoot.innerHTML = "";
+    } else {
+      this.attachShadow({ mode: "open" });
+    }
+
+    this.shadowRoot.innerHTML = `
       <style>
         :host {
-          --card-background-color: var(--ha-card-background, #fff);
-          --text-color: var(--primary-text-color, #212121);
+          display: block;
         }
-
-        .card {
-          background-color: var(--card-background-color);
-          border-radius: 12px;
+        ha-card {
           padding: 16px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
         }
-
-        .title {
-          font-size: 20px;
-          font-weight: 600;
-          margin-bottom: 12px;
-          color: var(--text-color);
-        }
-
         .image-container {
           position: relative;
           width: 100%;
-          padding-bottom: 66.67%;
-          margin-bottom: 16px;
-          background: #f0f0f0;
+          padding-bottom: 56.25%;
+          background: var(--secondary-background-color, #f0f0f0);
           border-radius: 8px;
           overflow: hidden;
+          margin-bottom: 16px;
         }
-
         .image-container img {
           position: absolute;
           top: 0;
@@ -77,180 +63,115 @@ class LutarymSlideshowCard extends HTMLElement {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          display: none;
+          opacity: 0;
+          transition: opacity 0.6s ease;
         }
-
         .image-container img.active {
-          display: block;
-          animation: fadeIn 0.5s;
+          opacity: 1;
         }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
         .no-images {
-          text-align: center;
-          padding: 20px;
-          color: #999;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: var(--secondary-text-color, #999);
           font-size: 14px;
         }
-
         .controls {
           display: flex;
           gap: 12px;
-          margin-bottom: 12px;
           flex-wrap: wrap;
+          align-items: center;
+          margin-bottom: 12px;
         }
-
         .control-group {
           display: flex;
-          gap: 8px;
+          gap: 6px;
           align-items: center;
-          flex: 1;
-          min-width: 180px;
         }
-
-        label {
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--text-color);
+        .control-group label {
+          font-size: 13px;
+          color: var(--primary-text-color);
           white-space: nowrap;
         }
-
-        input[type="number"] {
-          padding: 6px 8px;
-          border: 1px solid #ddd;
+        .control-group input[type="number"] {
+          width: 60px;
+          padding: 4px 6px;
+          border: 1px solid var(--divider-color, #ddd);
           border-radius: 4px;
-          font-size: 14px;
-          width: 70px;
+          font-size: 13px;
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color);
         }
-
-        select {
-          padding: 6px 8px;
-          border: 1px solid #ddd;
+        .control-group select {
+          padding: 4px 6px;
+          border: 1px solid var(--divider-color, #ddd);
           border-radius: 4px;
-          font-size: 14px;
-          flex: 1;
-          min-width: 120px;
+          font-size: 13px;
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color);
         }
-
-        button {
-          padding: 8px 16px;
-          background-color: #03a9f4;
-          color: white;
+        .btn {
+          padding: 6px 14px;
+          background: var(--primary-color, #03a9f4);
+          color: #fff;
           border: none;
           border-radius: 4px;
           cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
+          font-size: 13px;
         }
-
-        button:hover {
-          background-color: #0288d1;
+        .btn:hover {
+          opacity: 0.85;
         }
-
-        button:disabled {
-          background-color: #ccc;
+        .btn:disabled {
+          opacity: 0.4;
           cursor: not-allowed;
         }
-
-        .status {
-          padding: 12px;
-          background-color: #f5f5f5;
-          border-radius: 4px;
-          font-size: 13px;
-          color: var(--text-color);
-          margin-bottom: 12px;
+        .status-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          color: var(--secondary-text-color, #666);
         }
-
-        .status.loading {
-          background-color: #e3f2fd;
-          color: #1976d2;
+        .status-bar .error {
+          color: var(--error-color, #db4437);
         }
-
-        .status.error {
-          background-color: #ffebee;
-          color: #c62828;
-        }
-
-        .status.success {
-          background-color: #e8f5e9;
-          color: #2e7d32;
-        }
-
-        .info-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-          gap: 12px;
-          font-size: 13px;
-          margin-top: 12px;
-        }
-
-        .info-item {
-          padding: 8px;
-          background-color: #fafafa;
-          border-radius: 4px;
-        }
-
-        .info-label {
-          font-weight: 600;
-          color: #666;
-        }
-
-        .info-value {
-          color: var(--text-color);
-          margin-top: 4px;
-          font-size: 14px;
-          font-weight: 500;
+        .status-bar .success {
+          color: var(--success-color, #43a047);
         }
       </style>
 
-      <div class="card">
-        <div class="title">Slideshow</div>
-        
-        <div class="status" id="status">Lädt...</div>
-
+      <ha-card>
         <div class="image-container" id="imageContainer">
-          <div class="no-images">Keine Bilder verfügbar</div>
+          <div class="no-images" id="placeholder">Keine Bilder</div>
         </div>
 
         <div class="controls">
           <div class="control-group">
-            <label for="interval">Intervall (Min):</label>
+            <label>Intervall (Min):</label>
             <input type="number" id="interval" min="1" max="120" value="${this.intervalMinutes}">
           </div>
           <div class="control-group">
-            <label for="action">Abgelaufen:</label>
+            <label>Abgelaufen:</label>
             <select id="action">
-              <option value="archive" ${this.archiveMode ? 'selected' : ''}>Archiv</option>
-              <option value="delete" ${!this.archiveMode ? 'selected' : ''}>Löschen</option>
+              <option value="archive" ${this.archiveMode ? "selected" : ""}>Archiv</option>
+              <option value="delete" ${!this.archiveMode ? "selected" : ""}>Löschen</option>
             </select>
           </div>
-          <button id="cleanupBtn">Bereinigen</button>
+          <button class="btn" id="cleanupBtn">Bereinigen</button>
         </div>
 
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Bilder</div>
-            <div class="info-value" id="imageCount">0</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Aktuell</div>
-            <div class="info-value" id="currentImage">-</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Status</div>
-            <div class="info-value" id="slideshowStatus">-</div>
-          </div>
+        <div class="status-bar">
+          <span id="statusText">Lädt...</span>
+          <span id="imageInfo"></span>
         </div>
-      </div>
+      </ha-card>
     `;
 
     this.shadowRoot.getElementById("interval").addEventListener("change", (e) => {
-      this.intervalMinutes = parseInt(e.target.value);
-      this.restartSlideshow();
+      this.intervalMinutes = parseInt(e.target.value) || 5;
+      this._restartSlideshow();
     });
 
     this.shadowRoot.getElementById("action").addEventListener("change", (e) => {
@@ -258,184 +179,273 @@ class LutarymSlideshowCard extends HTMLElement {
     });
 
     this.shadowRoot.getElementById("cleanupBtn").addEventListener("click", () => {
-      this.performCleanup();
+      this._performCleanup();
     });
   }
 
-  async loadImages() {
-    this.setStatus("Lädt Bilder...", "loading");
-    this.images = [];
-    this.currentIndex = 0;
+  async _loadImages() {
+    this._setStatus("Lädt Bilder...");
 
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      this.updateDisplay();
-      this.setStatus("Bereit", "success");
-    } catch (error) {
-      this.setStatus(`Fehler: ${error}`, "error");
-    }
-  }
-
-  startSlideshow() {
-    if (this.slideshowInterval) clearInterval(this.slideshowInterval);
-    
-    if (this.images.length > 0) {
-      this.slideshowInterval = setInterval(() => {
-        this.currentIndex = (this.currentIndex + 1) % this.images.length;
-        this.updateDisplay();
-      }, this.intervalMinutes * 60 * 1000);
-
-      this.shadowRoot.getElementById("slideshowStatus").textContent = "Läuft";
-    } else {
-      this.shadowRoot.getElementById("slideshowStatus").textContent = "Keine Bilder";
-    }
-  }
-
-  restartSlideshow() {
-    this.startSlideshow();
-  }
-
-  updateDisplay() {
-    const container = this.shadowRoot.getElementById("imageContainer");
-    
-    if (this.images.length === 0) {
-      container.innerHTML = '<div class="no-images">Keine Bilder verfügbar</div>';
-      this.shadowRoot.getElementById("imageCount").textContent = "0";
-      this.shadowRoot.getElementById("currentImage").textContent = "-";
+    if (!this.mediaPath) {
+      this._setStatus("Kein Media-Pfad konfiguriert", "error");
       return;
     }
 
-    let html = '';
-    for (let i = 0; i < this.images.length; i++) {
-      const img = this.images[i];
-      html += `<img src="${img}" class="${i === this.currentIndex ? 'active' : ''}" alt="Bild ${i + 1}">`;
+    try {
+      const mediaId = "media-source://media_source/local/" + this.mediaPath;
+
+      const result = await this._hass.callWS({
+        type: "media_source/browse_media",
+        media_content_id: mediaId
+      });
+
+      if (!result || !result.children || result.children.length === 0) {
+        this._setStatus("Keine Bilder gefunden", "error");
+        this.images = [];
+        this._updateDisplay();
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const validImages = [];
+
+      for (const child of result.children) {
+        if (!child.title || !child.title.toLowerCase().endsWith(".jpg")) continue;
+
+        const dateMatch = child.title.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+        if (!dateMatch) continue;
+
+        const day = parseInt(dateMatch[1]);
+        const month = parseInt(dateMatch[2]);
+        const year = parseInt(dateMatch[3]);
+
+        try {
+          const expiryDate = new Date(year, month - 1, day);
+          if (expiryDate >= today) {
+            const resolved = await this._hass.callWS({
+              type: "media_source/resolve_media",
+              media_content_id: child.media_content_id
+            });
+
+            if (resolved && resolved.url) {
+              validImages.push({
+                name: child.title,
+                url: resolved.url,
+                expiry: expiryDate
+              });
+            }
+          }
+        } catch (e) {
+          // Ungültiges Datum, überspringen
+        }
+      }
+
+      this.images = validImages;
+      this.currentIndex = 0;
+      this._updateDisplay();
+      this._startSlideshow();
+      this._setStatus(this.images.length + " Bilder geladen", "success");
+    } catch (error) {
+      this._setStatus("Fehler: " + error.message, "error");
     }
-    
-    container.innerHTML = html;
-    this.shadowRoot.getElementById("imageCount").textContent = this.images.length;
-    this.shadowRoot.getElementById("currentImage").textContent = `${this.currentIndex + 1}/${this.images.length}`;
   }
 
-  performCleanup() {
+  _startSlideshow() {
+    if (this._timer) clearInterval(this._timer);
+
+    if (this.images.length > 1) {
+      this._timer = setInterval(() => {
+        this.currentIndex = (this.currentIndex + 1) % this.images.length;
+        this._updateDisplay();
+      }, this.intervalMinutes * 60 * 1000);
+    }
+  }
+
+  _restartSlideshow() {
+    this._startSlideshow();
+  }
+
+  _updateDisplay() {
+    const container = this.shadowRoot.getElementById("imageContainer");
+    const info = this.shadowRoot.getElementById("imageInfo");
+
+    if (this.images.length === 0) {
+      container.innerHTML = '<div class="no-images">Keine Bilder verfügbar</div>';
+      info.textContent = "";
+      return;
+    }
+
+    const current = this.images[this.currentIndex];
+
+    let img = container.querySelector("img.active");
+    const newImg = document.createElement("img");
+    newImg.src = current.url;
+    newImg.alt = current.name;
+    container.appendChild(newImg);
+
+    requestAnimationFrame(() => {
+      if (img) img.classList.remove("active");
+      newImg.classList.add("active");
+
+      setTimeout(() => {
+        const oldImgs = container.querySelectorAll("img:not(.active)");
+        oldImgs.forEach((el) => el.remove());
+        const placeholder = container.querySelector(".no-images");
+        if (placeholder) placeholder.remove();
+      }, 700);
+    });
+
+    info.textContent = (this.currentIndex + 1) + " / " + this.images.length;
+  }
+
+  async _performCleanup() {
     const btn = this.shadowRoot.getElementById("cleanupBtn");
     btn.disabled = true;
-    this.setStatus("Bereinigung...", "loading");
+    this._setStatus("Bereinigung läuft...");
 
-    setTimeout(() => {
-      this.setStatus("Bereinigung abgeschlossen", "success");
-      this.loadImages();
+    try {
+      const serviceData = {
+        action: this.archiveMode ? "archive" : "delete"
+      };
+
+      await this._hass.callService("automation", "trigger", {
+        entity_id: "automation.slideshow_cleanup"
+      });
+
+      this._setStatus("Bereinigung abgeschlossen", "success");
+      setTimeout(() => this._loadImages(), 2000);
+    } catch (error) {
+      this._setStatus("Fehler: " + error.message, "error");
+    } finally {
       btn.disabled = false;
-    }, 1000);
+    }
   }
 
-  setStatus(message, type = "info") {
-    const status = this.shadowRoot.getElementById("status");
-    status.textContent = message;
-    status.className = `status ${type}`;
+  _setStatus(text, type) {
+    const el = this.shadowRoot.getElementById("statusText");
+    el.textContent = text;
+    el.className = type || "";
+  }
+
+  disconnectedCallback() {
+    if (this._timer) clearInterval(this._timer);
+  }
+
+  getCardSize() {
+    return 4;
   }
 }
 
+
 class LutarymSlideshowEditor extends HTMLElement {
+  constructor() {
+    super();
+    this._config = {};
+  }
+
   setHass(hass) {
-    this.hass = hass;
+    this._hass = hass;
   }
 
   setConfig(config) {
-    this.config = config;
-    this.render();
+    this._config = { ...config };
+    this._render();
   }
 
-  render() {
+  _render() {
     this.innerHTML = `
       <style>
         .editor {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          padding: 16px;
+          gap: 16px;
+          padding: 16px 0;
         }
         .field {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 4px;
         }
-        label {
-          font-weight: 600;
+        .field label {
+          font-weight: 500;
           font-size: 14px;
+          color: var(--primary-text-color);
         }
-        input, select {
+        .field input,
+        .field select {
           padding: 8px;
-          border: 1px solid #ddd;
+          border: 1px solid var(--divider-color, #ddd);
           border-radius: 4px;
           font-size: 14px;
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color);
         }
-        input:focus, select:focus {
+        .field input:focus,
+        .field select:focus {
           outline: none;
-          border-color: #03a9f4;
-          box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.1);
+          border-color: var(--primary-color, #03a9f4);
         }
-        .description {
+        .field .hint {
           font-size: 12px;
-          color: #666;
+          color: var(--secondary-text-color, #666);
         }
       </style>
       <div class="editor">
         <div class="field">
           <label>SMB-Pfad</label>
-          <input type="text" id="smb_path" value="${this.config.smb_path || ''}" placeholder="\\192.168.10.10\ordner">
-          <div class="description">z.B. \\192.168.10.10\ordner</div>
+          <input type="text" id="smb_path" value="${this._config.smb_path || ""}">
+          <div class="hint">z.B. \\\\192.168.10.10\\HomeAssistant</div>
         </div>
-        
         <div class="field">
           <label>Bildverzeichnis</label>
-          <input type="text" id="image_path" value="${this.config.image_path || 'bilder'}" placeholder="bilder">
+          <input type="text" id="media_path" value="${this._config.media_path || ""}">
+          <div class="hint">Pfad in HA Media, z.B. Synology/slideshow/bilder</div>
         </div>
-        
         <div class="field">
           <label>Archivverzeichnis</label>
-          <input type="text" id="archive_path" value="${this.config.archive_path || 'archiv'}" placeholder="archiv">
+          <input type="text" id="archive_path" value="${this._config.archive_path || ""}">
+          <div class="hint">z.B. Synology/slideshow/archiv</div>
         </div>
-        
         <div class="field">
           <label>Bildwechsel (Minuten)</label>
-          <input type="number" id="interval_minutes" value="${this.config.interval_minutes || 5}" min="1" max="120">
+          <input type="number" id="interval_minutes" min="1" max="120" value="${this._config.interval_minutes || ""}">
         </div>
-        
         <div class="field">
           <label>Abgelaufene Bilder</label>
           <select id="action">
-            <option value="archive" ${this.config.action === 'archive' ? 'selected' : ''}>In Archiv verschieben</option>
-            <option value="delete" ${this.config.action === 'delete' ? 'selected' : ''}>Löschen</option>
+            <option value="archive" ${this._config.action === "archive" ? "selected" : ""}>In Archiv verschieben</option>
+            <option value="delete" ${this._config.action === "delete" ? "selected" : ""}>Löschen</option>
           </select>
         </div>
       </div>
     `;
 
-    this.querySelector('#smb_path').addEventListener('input', (e) => this._updateConfig('smb_path', e.target.value));
-    this.querySelector('#image_path').addEventListener('input', (e) => this._updateConfig('image_path', e.target.value));
-    this.querySelector('#archive_path').addEventListener('input', (e) => this._updateConfig('archive_path', e.target.value));
-    this.querySelector('#interval_minutes').addEventListener('input', (e) => this._updateConfig('interval_minutes', parseInt(e.target.value)));
-    this.querySelector('#action').addEventListener('change', (e) => this._updateConfig('action', e.target.value));
-  }
+    const fields = ["smb_path", "media_path", "archive_path", "interval_minutes", "action"];
+    fields.forEach((field) => {
+      const el = this.querySelector("#" + field);
+      if (!el) return;
 
-  _updateConfig(key, value) {
-    this.config = { ...this.config, [key]: value };
-    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this.config } }));
-  }
-
-  static getConfigElement() {
-    return document.createElement('lutarym-slideshow-editor');
+      const event = el.tagName === "SELECT" ? "change" : "input";
+      el.addEventListener(event, (e) => {
+        let val = e.target.value;
+        if (field === "interval_minutes") val = parseInt(val) || "";
+        this._config = { ...this._config, [field]: val };
+        this.dispatchEvent(new CustomEvent("config-changed", {
+          detail: { config: this._config }
+        }));
+      });
+    });
   }
 }
 
-customElements.define('lutarym-slideshow-card', LutarymSlideshowCard);
-customElements.define('lutarym-slideshow-editor', LutarymSlideshowEditor);
+customElements.define("lutarym-slideshow-card", LutarymSlideshowCard);
+customElements.define("lutarym-slideshow-editor", LutarymSlideshowEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'lutarym-slideshow-card',
-  name: 'Lutarym Slideshow',
-  description: 'Slideshow Card mit SMB-Unterstützung'
+  type: "lutarym-slideshow-card",
+  name: "Lutarym Slideshow",
+  description: "Slideshow Card mit Bildverwaltung und Verfallsdatum"
 });
