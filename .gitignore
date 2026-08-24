@@ -1,6 +1,4 @@
 node_modules/
 *.swp
-*.swo
 .DS_Store
-*.zip
 .env

@@ -1,22 +1,22 @@
-# Lutarym Slideshow Card
+# Lutarym Slideshow
 
-Lovelace Card für Slideshows mit Bildwechsel-Intervall und Bildverwaltung.
+Lovelace Card für Slideshows mit Bildwechsel-Intervall.
 
 ## Installation
 
-### HACS (empfohlen)
+### HACS
 
-1. HACS öffnen
-2. Frontend → Custom Repositories
-3. URL: `https://github.com/lutarym/lutarym-slideshow-card`
+1. HACS öffnen → Frontend
+2. Custom Repositories
+3. URL: `https://github.com/lutarym/lutarym-slideshow`
 4. Kategorie: `Lovelace`
 5. Installieren
 
 ### Manuell
 
 ```bash
-mkdir -p /root/config/www/community/lutarym-slideshow
-wget https://raw.githubusercontent.com/lutarym/lutarym-slideshow-card/main/dist/lutarym-slideshow-card.js -O /root/config/www/community/lutarym-slideshow/lutarym-slideshow-card.js
+mkdir -p /root/config/www/lutarym-slideshow
+wget https://raw.githubusercontent.com/lutarym/lutarym-slideshow/main/lutarym-slideshow-card.js -O /root/config/www/lutarym-slideshow/lutarym-slideshow-card.js
 ```
 
 ## Konfiguration
@@ -26,7 +26,7 @@ wget https://raw.githubusercontent.com/lutarym/lutarym-slideshow-card/main/dist/
 ```yaml
 frontend:
   extra_module_url:
-    - /local/community/lutarym-slideshow/lutarym-slideshow-card.js
+    - /local/lutarym-slideshow/lutarym-slideshow-card.js
 ```
 
 ### Dashboard
@@ -45,28 +45,23 @@ action: archive
 
 ## Optionen
 
-| Option | Type | Standard | Beschreibung |
-|--------|------|----------|-------------|
-| `smb_host` | string | - | NAS Hostname/IP |
-| `smb_share` | string | - | SMB Share Name |
+| Option | Typ | Standard | Beschreibung |
+|--------|-----|----------|-------------|
+| `smb_host` | string | - | NAS Hostname |
+| `smb_share` | string | - | SMB Freigabe |
 | `smb_user` | string | - | SMB Benutzer |
 | `smb_password` | string | - | SMB Passwort |
-| `image_path` | string | - | Bildverzeichnis |
-| `archive_path` | string | - | Archivverzeichnis |
-| `interval_minutes` | number | 5 | Bildwechsel in Minuten |
+| `image_path` | string | - | Pfad zu Bildern |
+| `archive_path` | string | - | Archivpfad |
+| `interval_minutes` | number | 5 | Bildwechsel |
 | `action` | string | archive | `archive` oder `delete` |
 
 ## Datumsformat
 
-Bilder: `DD.MM.YYYY.jpg`
+`DD.MM.YYYY.jpg`
 
 Beispiele:
-- `26.08.2026.jpg` → Verfällt 26.08.2026
-- `31.12.2025.jpg` → Verfällt 31.12.2025
+- `26.08.2026.jpg`
+- `31.12.2025.jpg`
 
-Bilder mit Verfallsdatum in Zukunft: angezeigt
-Bilder mit Verfallsdatum in Vergangenheit: bei Cleanup archiviert/gelöscht
-
-## Lizenz
-
-MIT
+Lizenz: MIT
