@@ -1,6 +1,5 @@
 {
   "name": "Lutarym Slideshow",
-  "homeassistant": "2024.1.0",
-  "render_readme": true,
-  "requirements": []
+  "content_in_root": true,
+  "filename": "lutarym-slideshow-card.js"
 }
