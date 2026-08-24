@@ -186,6 +186,7 @@ class LutarymSlideshowEditor extends HTMLElement {
   constructor() {
     super();
     this._config = {};
+    this._rendered = false;
   }
 
   setHass(hass) {
@@ -194,7 +195,10 @@ class LutarymSlideshowEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = { ...config };
-    this._render();
+    if (!this._rendered) {
+      this._rendered = true;
+      this._render();
+    }
   }
 
   _render() {
