@@ -1,14 +1,17 @@
 class LutarymSlideshowCard extends HTMLElement {
   setConfig(config) {
     this.config = config;
-    this.images = [];
-    this.currentIndex = 0;
     this.intervalMinutes = config.interval_minutes || 5;
     this.archiveMode = config.action !== "delete";
     this.mediaPath = config.media_path || "";
     this.archivePath = config.archive_path || "";
     this.imageHeight = config.image_height || 300;
     this.imageFit = config.image_fit || "contain";
+
+    if (!this.images) {
+      this.images = [];
+      this.currentIndex = 0;
+    }
   }
 
   set hass(hass) {
