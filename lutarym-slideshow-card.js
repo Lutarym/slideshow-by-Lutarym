@@ -1,16 +1,16 @@
 class LutarymSlideshowCard extends HTMLElement {
   setConfig(config) {
+    if (!config.smb_path) {
+      throw new Error("SMB-Pfad erforderlich");
+    }
     this.config = config;
     this.images = [];
     this.currentIndex = 0;
     this.intervalMinutes = config.interval_minutes || 5;
     this.archiveMode = config.action !== "delete";
-    this.smbHost = config.smb_host;
-    this.smbShare = config.smb_share;
-    this.smbUser = config.smb_user;
-    this.smbPassword = config.smb_password;
-    this.imagePath = config.image_path;
-    this.archivePath = config.archive_path;
+    this.smbPath = config.smb_path;
+    this.imagePath = config.image_path || "bilder";
+    this.archivePath = config.archive_path || "archiv";
   }
 
   setHass(hass) {
@@ -21,6 +21,20 @@ class LutarymSlideshowCard extends HTMLElement {
       this.loadImages();
       this.startSlideshow();
     }
+  }
+
+  static getConfigElement() {
+    return document.createElement("lutarym-slideshow-editor");
+  }
+
+  static getStubConfig() {
+    return {
+      smb_path: "\\192.168.10.10\ordner",
+      image_path: "bilder",
+      archive_path: "archiv",
+      interval_minutes: 5,
+      action: "archive"
+    };
   }
 
   render() {
@@ -321,22 +335,76 @@ class LutarymSlideshowCard extends HTMLElement {
     status.textContent = message;
     status.className = `status ${type}`;
   }
+}
 
-  static getStubConfig() {
-    return {
-      smb_host: "srv-nas03",
-      smb_share: "Home Assistant",
-      smb_user: "!secret smb_user",
-      smb_password: "!secret smb_password",
-      image_path: "/slideshow/bilder/",
-      archive_path: "/slideshow/archiv/",
-      interval_minutes: 5,
-      action: "archive"
-    };
+class LutarymSlideshowEditor extends HTMLElement {
+  setHass(hass) {
+    this.hass = hass;
+  }
+
+  setConfig(config) {
+    this.config = config;
+    this.render();
+  }
+
+  render() {
+    this.innerHTML = `
+      <ha-form
+        .hass=${this.hass}
+        .schema=${[
+          {
+            type: "string",
+            id: "smb_path",
+            name: "SMB-Pfad",
+            description: "z.B. \\\\192.168.10.10\\ordner",
+            required: true
+          },
+          {
+            type: "string",
+            id: "image_path",
+            name: "Bildverzeichnis",
+            description: "z.B. bilder",
+            default: "bilder"
+          },
+          {
+            type: "string",
+            id: "archive_path",
+            name: "Archivverzeichnis",
+            description: "z.B. archiv",
+            default: "archiv"
+          },
+          {
+            type: "integer",
+            id: "interval_minutes",
+            name: "Bildwechsel (Minuten)",
+            default: 5
+          },
+          {
+            type: "select",
+            id: "action",
+            name: "Abgelaufene Bilder",
+            options: [["archive", "In Archiv verschieben"], ["delete", "Löschen"]],
+            default: "archive"
+          }
+        ]}
+        .data=${this.config}
+        @value-changed=${this._valueChanged}
+      ></ha-form>
+    `;
+  }
+
+  _valueChanged(event) {
+    const data = event.detail.value;
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: data } }));
+  }
+
+  static getConfigElement() {
+    return document.createElement("lutarym-slideshow-editor");
   }
 }
 
 customElements.define("lutarym-slideshow-card", LutarymSlideshowCard);
+customElements.define("lutarym-slideshow-editor", LutarymSlideshowEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

@@ -33,12 +33,9 @@ frontend:
 
 ```yaml
 type: custom:lutarym-slideshow-card
-smb_host: srv-nas03
-smb_share: Home Assistant
-smb_user: !secret smb_user
-smb_password: !secret smb_password
-image_path: /slideshow/bilder/
-archive_path: /slideshow/archiv/
+smb_path: \\192.168.10.10\ordner
+image_path: bilder
+archive_path: archiv
 interval_minutes: 5
 action: archive
 ```
@@ -47,13 +44,10 @@ action: archive
 
 | Option | Typ | Standard | Beschreibung |
 |--------|-----|----------|-------------|
-| `smb_host` | string | - | NAS Hostname |
-| `smb_share` | string | - | SMB Freigabe |
-| `smb_user` | string | - | SMB Benutzer |
-| `smb_password` | string | - | SMB Passwort |
-| `image_path` | string | - | Pfad zu Bildern |
-| `archive_path` | string | - | Archivpfad |
-| `interval_minutes` | number | 5 | Bildwechsel |
+| `smb_path` | string | - | SMB-Pfad (z.B. `\\192.168.10.10\ordner`) |
+| `image_path` | string | - | Bildverzeichnis |
+| `archive_path` | string | - | Archivverzeichnis |
+| `interval_minutes` | number | 5 | Bildwechsel in Minuten |
 | `action` | string | archive | `archive` oder `delete` |
 
 ## Datumsformat
