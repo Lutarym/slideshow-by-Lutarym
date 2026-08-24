@@ -186,7 +186,6 @@ class LutarymSlideshowEditor extends HTMLElement {
   constructor() {
     super();
     this._config = {};
-    this._rendered = false;
   }
 
   setHass(hass) {
@@ -195,10 +194,15 @@ class LutarymSlideshowEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = { ...config };
-    if (!this._rendered) {
-      this._rendered = true;
+    if (!this.querySelector(".editor")) {
       this._render();
     }
+  }
+
+  _fireChanged() {
+    this.dispatchEvent(new CustomEvent("config-changed", {
+      detail: { config: { ...this._config } }
+    }));
   }
 
   _render() {
@@ -282,19 +286,39 @@ class LutarymSlideshowEditor extends HTMLElement {
       </div>
     `;
 
-    const fields = ["smb_path", "media_path", "archive_path", "interval_minutes", "image_height", "image_fit", "action"];
-    fields.forEach((field) => {
-      const el = this.querySelector("#" + field);
-      if (!el) return;
-      const event = el.tagName === "SELECT" ? "change" : "input";
-      el.addEventListener(event, (e) => {
-        let val = e.target.value;
-        if (field === "interval_minutes" || field === "image_height") val = parseInt(val) || "";
-        this._config = { ...this._config, [field]: val };
-        this.dispatchEvent(new CustomEvent("config-changed", {
-          detail: { config: this._config }
-        }));
-      });
+    this.querySelector("#smb_path").addEventListener("change", (e) => {
+      this._config.smb_path = e.target.value;
+      this._fireChanged();
+    });
+
+    this.querySelector("#media_path").addEventListener("change", (e) => {
+      this._config.media_path = e.target.value;
+      this._fireChanged();
+    });
+
+    this.querySelector("#archive_path").addEventListener("change", (e) => {
+      this._config.archive_path = e.target.value;
+      this._fireChanged();
+    });
+
+    this.querySelector("#interval_minutes").addEventListener("change", (e) => {
+      this._config.interval_minutes = parseInt(e.target.value) || 5;
+      this._fireChanged();
+    });
+
+    this.querySelector("#image_height").addEventListener("change", (e) => {
+      this._config.image_height = parseInt(e.target.value) || 300;
+      this._fireChanged();
+    });
+
+    this.querySelector("#image_fit").addEventListener("change", (e) => {
+      this._config.image_fit = e.target.value;
+      this._fireChanged();
+    });
+
+    this.querySelector("#action").addEventListener("change", (e) => {
+      this._config.action = e.target.value;
+      this._fireChanged();
     });
   }
 }
