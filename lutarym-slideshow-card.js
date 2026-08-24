@@ -349,66 +349,93 @@ class LutarymSlideshowEditor extends HTMLElement {
 
   render() {
     this.innerHTML = `
-      <ha-form
-        .hass=${this.hass}
-        .schema=${[
-          {
-            type: "string",
-            id: "smb_path",
-            name: "SMB-Pfad",
-            description: "z.B. \\\\192.168.10.10\\ordner",
-            required: true
-          },
-          {
-            type: "string",
-            id: "image_path",
-            name: "Bildverzeichnis",
-            description: "z.B. bilder",
-            default: "bilder"
-          },
-          {
-            type: "string",
-            id: "archive_path",
-            name: "Archivverzeichnis",
-            description: "z.B. archiv",
-            default: "archiv"
-          },
-          {
-            type: "integer",
-            id: "interval_minutes",
-            name: "Bildwechsel (Minuten)",
-            default: 5
-          },
-          {
-            type: "select",
-            id: "action",
-            name: "Abgelaufene Bilder",
-            options: [["archive", "In Archiv verschieben"], ["delete", "Löschen"]],
-            default: "archive"
-          }
-        ]}
-        .data=${this.config}
-        @value-changed=${this._valueChanged}
-      ></ha-form>
+      <style>
+        .editor {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding: 16px;
+        }
+        .field {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        label {
+          font-weight: 600;
+          font-size: 14px;
+        }
+        input, select {
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+        input:focus, select:focus {
+          outline: none;
+          border-color: #03a9f4;
+          box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.1);
+        }
+        .description {
+          font-size: 12px;
+          color: #666;
+        }
+      </style>
+      <div class="editor">
+        <div class="field">
+          <label>SMB-Pfad</label>
+          <input type="text" id="smb_path" value="${this.config.smb_path || ''}" placeholder="\\192.168.10.10\ordner">
+          <div class="description">z.B. \\192.168.10.10\ordner</div>
+        </div>
+        
+        <div class="field">
+          <label>Bildverzeichnis</label>
+          <input type="text" id="image_path" value="${this.config.image_path || 'bilder'}" placeholder="bilder">
+        </div>
+        
+        <div class="field">
+          <label>Archivverzeichnis</label>
+          <input type="text" id="archive_path" value="${this.config.archive_path || 'archiv'}" placeholder="archiv">
+        </div>
+        
+        <div class="field">
+          <label>Bildwechsel (Minuten)</label>
+          <input type="number" id="interval_minutes" value="${this.config.interval_minutes || 5}" min="1" max="120">
+        </div>
+        
+        <div class="field">
+          <label>Abgelaufene Bilder</label>
+          <select id="action">
+            <option value="archive" ${this.config.action === 'archive' ? 'selected' : ''}>In Archiv verschieben</option>
+            <option value="delete" ${this.config.action === 'delete' ? 'selected' : ''}>Löschen</option>
+          </select>
+        </div>
+      </div>
     `;
+
+    this.querySelector('#smb_path').addEventListener('input', (e) => this._updateConfig('smb_path', e.target.value));
+    this.querySelector('#image_path').addEventListener('input', (e) => this._updateConfig('image_path', e.target.value));
+    this.querySelector('#archive_path').addEventListener('input', (e) => this._updateConfig('archive_path', e.target.value));
+    this.querySelector('#interval_minutes').addEventListener('input', (e) => this._updateConfig('interval_minutes', parseInt(e.target.value)));
+    this.querySelector('#action').addEventListener('change', (e) => this._updateConfig('action', e.target.value));
   }
 
-  _valueChanged(event) {
-    const data = event.detail.value;
-    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: data } }));
+  _updateConfig(key, value) {
+    this.config = { ...this.config, [key]: value };
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this.config } }));
   }
 
   static getConfigElement() {
-    return document.createElement("lutarym-slideshow-editor");
+    return document.createElement('lutarym-slideshow-editor');
   }
 }
 
-customElements.define("lutarym-slideshow-card", LutarymSlideshowCard);
-customElements.define("lutarym-slideshow-editor", LutarymSlideshowEditor);
+customElements.define('lutarym-slideshow-card', LutarymSlideshowCard);
+customElements.define('lutarym-slideshow-editor', LutarymSlideshowEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "lutarym-slideshow-card",
-  name: "Lutarym Slideshow",
-  description: "Slideshow Card mit SMB-Unterstützung"
+  type: 'lutarym-slideshow-card',
+  name: 'Lutarym Slideshow',
+  description: 'Slideshow Card mit SMB-Unterstützung'
 });
