@@ -67,6 +67,18 @@ Im Dashboard-Editor "Card hinzufügen" → Lutarym Slideshow.
 
 Alle Einstellungen werden über die UI konfiguriert.
 
+## Konfiguration
+
+| Option | Typ | Standard | Beschreibung |
+|--------|-----|----------|-------------|
+| `smb_path` | string | | SMB-Pfad (z.B. `\\192.168.10.10\HomeAssistant`) |
+| `media_path` | string | | Bildverzeichnis in HA Media |
+| `archive_path` | string | | Archivverzeichnis |
+| `interval_seconds` | number | 30 | Bildwechsel in Sekunden |
+| `image_height` | number | 300 | Bildhöhe in Pixel |
+| `image_fit` | string | contain | Skalierung: contain, cover, fill, none |
+| `action` | string | archive | `archive` oder `delete` |
+
 ## Datumsformat
 
 Dateinamen: `DD.MM.YYYY.jpg`
