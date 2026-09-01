@@ -85,6 +85,22 @@ Dateinamen: `DD.MM.YYYY.jpg`
 
 Beispiele: `26.08.2026.jpg`, `31.12.2025.jpg`
 
+Unterstützte Formate: jpg, jpeg, png
+
+Ein Bild wird an seinem Datum noch angezeigt und erst beim Cleanup am Folgetag verschoben oder gelöscht.
+
+Dateien ohne Datum im Namen und Dateien mit ungültigem Datum (z.B. `31.02.2026.jpg`) werden ignoriert, also weder angezeigt noch verschoben.
+
+## Verhalten im Dauerbetrieb
+
+Die Card lädt die Bildliste beim Start und danach stündlich neu. Das ist nötig, weil die von Home Assistant erzeugten Bild-URLs signiert sind und nach 24 Stunden ablaufen, und damit nach dem Cleanup um Mitternacht keine gelöschten Bilder mehr angezeigt werden.
+
+Kann ein Bild nicht geladen werden, lädt die Card die Liste automatisch neu.
+
+## Logdatei
+
+Das Cleanup-Script schreibt nach `/config/slideshow_cleanup.log`. Dort steht, welche Dateien verschoben, gelöscht oder übersprungen wurden.
+
 ## Lizenz
 
 MIT
